@@ -1,0 +1,340 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+//
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["extendedWhereUnique"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ownerOf   Brand[]
+  brandUser BrandUser[]
+  timeTable TimeTable[]
+
+  email String @unique
+  hash  String
+
+  discordId String? @unique
+  steamId String? @unique
+
+  discordUsername      String?
+  discordDiscriminator String?
+  discordAvatarUrl     String?
+
+  isActive Boolean @default(true)
+
+  @@map("users")
+}
+
+model BrandUser {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int
+
+  brand   Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  brandId Int
+
+  isAdmin Boolean @default(false)
+
+  vallet Economy?
+
+  message    Message[]
+  role       Role[]
+  tempRole   TempRole[]
+  permission Permission[]
+
+  server Server[]
+
+  strikeAuthor     Strike[] @relation(name: "author")
+  strike   Strike[]
+  
+  vacationAuthor     Vacation[] @relation(name: "author")
+  vacation Vacation[]
+
+  warnAuthor     Warn[] @relation(name: "author")
+  warn     Warn[]
+}
+
+
+model TimeTable{
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  steamId String
+  joinedTime DateTime
+  timeSpend Int
+  serverId Int
+
+  server   Server @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  user   User @relation(fields: [steamId], references: [steamId], onDelete: Cascade)
+}
+
+model Brand {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner              User[]
+  brandUser          BrandUser[]
+  server             Server[]
+  role               Role[]
+  tempRole           TempRole[]
+  adminTimeTable     AdminTimeTable[]
+  publicAnnouncments PublicAnnouncments[]
+  apiLogs            ApiLogs[]
+  warn               Warn[]
+  strike             Strike[]
+  vacation           Vacation[]
+
+  name           String
+  discordGuildId String
+  discordCode    String
+  primaryColor   String
+  secondaryColor String
+  tertiaryColor  String
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  title       String
+  description String?
+  link        String
+
+  brandUserId Int
+  brandUser   BrandUser @relation(fields: [brandUserId], references: [id], onDelete: Cascade)
+
+  @@map("Messages")
+}
+
+model Role {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  brand   Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  brandId Int
+
+  discordRoleId String
+  name          String
+  power         Int
+  group         String
+  color         String
+
+  brandUser      BrandUser[]
+  permissions    Permission[]
+  adminTimeTable AdminTimeTable[]
+  tempRole       TempRole[]
+}
+
+model TempRole {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  expirationDate DateTime
+
+  brandUserId Int
+  brandUser   BrandUser @relation(fields: [brandUserId], references: [id], onDelete: Cascade)
+  roleId      Int
+  role        Role      @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  brandId     Int
+  brand       Brand     @relation(fields: [brandId], references: [id], onDelete: Cascade)
+}
+
+model Permission {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sku       String @unique @default("null")
+  brandView Int    @default(0)
+
+  brandUser BrandUser[]
+  role      Role[]
+}
+
+model Server {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  brand   Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  brandId Int
+
+  name       String
+  sId        Int    @unique
+  game       String
+  support_id String @unique
+  ip         String
+  port       String
+
+  pteroServerId String
+  pteroAuthKey  String
+
+  timeTable                TimeTable[]
+  brandUser                BrandUser[]
+  adminTimeTable           AdminTimeTable[]
+  numberOfPrayersStatistic NumberOfPrayersStatistic[]
+}
+
+model NumberOfPrayersStatistic {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  numberOfPlayers Int
+  serverId        Int
+  server          Server @relation(fields: [serverId], references: [id], onDelete: Cascade)
+}
+
+model AdminTimeTable {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+
+  serverId Int
+  server   Server @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  roleId   Int
+  role     Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  brandId  Int
+  brand    Brand  @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  minimumTime Int
+}
+
+model Strike {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reason         String
+  authorId       Int
+  author         BrandUser @relation(name: "author", fields: [authorId], references: [id], onDelete: Cascade)
+  expirationDate DateTime
+
+  brandUserId Int
+  brandUser   BrandUser @relation(fields: [brandUserId], references: [id], onDelete: Cascade)
+  brandId     Int
+  brand       Brand     @relation(fields: [brandId], references: [id], onDelete: Cascade)
+}
+
+model Warn {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reason         String
+  authorId       Int
+  author         BrandUser @relation(name: "author", fields: [authorId], references: [id], onDelete: Cascade)
+  expirationDate DateTime
+
+  brandUserId Int
+  brandUser   BrandUser @relation(fields: [brandUserId], references: [id], onDelete: Cascade)
+  brandId     Int
+  brand       Brand     @relation(fields: [brandId], references: [id], onDelete: Cascade)
+}
+
+model Vacation {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reason   String
+  authorId Int
+  author         BrandUser @relation(name: "author", fields: [authorId], references: [id], onDelete: Cascade)
+
+  startOfVacation DateTime
+  endOfVacation   DateTime
+
+  brandUserId Int
+  brandUser   BrandUser @relation(fields: [brandUserId], references: [id], onDelete: Cascade)
+  brandId     Int
+  brand       Brand     @relation(fields: [brandId], references: [id], onDelete: Cascade)
+}
+
+model ApiLogs {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  title       String
+  description String
+  type        String @default("System")
+  color       String @default("#2e2e2e")
+
+  brand   Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  brandId Int
+}
+
+model PublicAnnouncments {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  Title        String
+  Description  String
+  Author       String
+  AuthorAvatar String
+
+  brandId Int
+  brand   Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+}
+
+model Economy {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  level      Int?    @default(0)
+  experience Int?    @default(0)
+  coin       Int?    @default(0)
+  cash       Int?    @default(0)
+  badge      Badge[]
+
+  brandUser   BrandUser @relation(fields: [brandUserId], references: [id], onDelete: Cascade)
+  brandUserId Int       @unique
+}
+
+model Badge {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  badgeName  String
+  badgeColor String
+  badgeUrl   String
+
+  Economy   Economy? @relation(fields: [economyId], references: [id])
+  economyId Int?
+}
+
+model PluginsTrustAndSafetyModel{
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  pluginIdentity String
+  serverIpAdress String[]
+}
+
+model JtwBlockTable{
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  blockedJwt String
+  reson String
+}
