@@ -12,7 +12,7 @@ import { SystemService } from './system.service';
 export class SystemController {
     constructor(private systemService: SystemService){}
 
-
+    //Wyjaśnienie fenomenu -> była potrzebna szybka funkcja na wgranie ustawień "Fabrycznych"
     @Permission(false, "user.seeMySelf")
     @Post('first/startup')
     startup(){
